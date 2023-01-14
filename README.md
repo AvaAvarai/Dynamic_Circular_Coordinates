@@ -5,10 +5,10 @@ required packages: PyOpenGL and PyOpenGL_accelerate, optionally wheel for build 
 
 ## virtualenv setup
 
-mkdir <dir_name>
-cd    <dir_name>
-python3 -m venv ./
-source bin/activate
-... # do stuff
-deactivate
+mkdir <dir_name>  
+cd    <dir_name>  
+python3 -m venv ./  
+source bin/activate  
+... # do stuff  
+deactivate  
 
