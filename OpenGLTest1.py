@@ -10,6 +10,7 @@ OpenGL.FULL_LOGGING = False
 GL_INFO_LOG = False
 
 import sys
+import math
 try:
     from OpenGL.GL   import *
     from OpenGL.GLUT import *
@@ -28,8 +29,9 @@ class OpenGLEnv:
         # 1:1 aspect ratio centered
         glutInitWindowSize(640, 640)
         self.screen_width, self.screen_height = glutGet(GLUT_SCREEN_WIDTH), glutGet(GLUT_SCREEN_HEIGHT)
-        self.window_width, self.window_height = int(self.screen_width/2 - 640/2), int(self.screen_height/2 - 640/2 - 20)
-        glutInitWindowPosition(self.window_width, self.window_height)
+        self.window_width, self.window_height = 640, 640
+        self.window_x, self.window_y = int(self.screen_width/2 - self.window_width/2), int(self.screen_height/2 - self.window_height/2)
+        glutInitWindowPosition(self.window_x, self.window_y)
         self.window = glutCreateWindow('PyOpenGL Test')
         self.setup_viewport()
         # GL version logging
@@ -55,7 +57,8 @@ class OpenGLEnv:
         # perspective and camera setup
         glMatrixMode(GL_PROJECTION)
         glLoadIdentity()
-        glOrtho(0.0, 1.0, 0.0, 1.0, 0.0, 1.0)
+        glOrtho(0.0, self.window_width, 0.0, self.window_height, 0.0, 1.0)
+        glMatrixMode(GL_MODELVIEW)
         glClearColor(0.75, 0.75, 0.75, 0.0) # light gray
 
     def reshape(self, width, height):
@@ -67,6 +70,11 @@ class OpenGLEnv:
         # viewport drawing
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
         glLoadIdentity()
+        glColor(1,0,0,0)
+        glBegin(GL_LINE_LOOP)
+        for i in range(100):
+              glVertex2f(320 + (250 * math.cos(i * (2*math.pi) / 100)), 320 + (250 * math.sin(i * (2*math.pi) / 100)))
+        glEnd()
         glutSwapBuffers()
 
     def keyboard(self, *args):
