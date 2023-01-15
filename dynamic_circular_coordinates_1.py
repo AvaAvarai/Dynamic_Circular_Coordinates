@@ -1,16 +1,22 @@
 import OpenGL
 
-# Error checking flag False results in roughly halved OpenGL calls
+# Error checking flag False gets roughly halved OpenGL calls
 OpenGL.ERROR_CHECKING = True
-# Error logging flag False provides performance boost for non-development
+# Error logging flag False gives performance boost for non-development
 OpenGL.ERROR_LOGGING = True
-# Full Error traces calls to OpenGL logging module for error trace
+# Full Logging flag enables OpenGL logging module for error trace
 OpenGL.FULL_LOGGING = False
 # GL vendor, version, and extension logging
 GL_INFO_LOG = False
 
-import sys
-import math
+# Window constants
+WINDOW_TITLE = 'Dynamic Circular Coordinates'
+WINDOW_DIM   = 640
+
+import sys  # used for sys.exit
+import math # used for math.pi, math.sin, math.cos
+
+# library check
 try:
     from OpenGL.GL   import *
     from OpenGL.GLUT import *
@@ -19,6 +25,7 @@ except:
     print('PyOpenGL is not installed.')
     sys.exit(1)
 
+# opengl environment class
 class OpenGLEnv:
     def __init__(self):
         # setup
@@ -26,13 +33,16 @@ class OpenGLEnv:
         print('Press any key to exit program.')
         glutInit(sys.argv)
         glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB)
-        # 1:1 aspect ratio centered
-        glutInitWindowSize(640, 640)
-        self.screen_width, self.screen_height = glutGet(GLUT_SCREEN_WIDTH), glutGet(GLUT_SCREEN_HEIGHT)
-        self.window_width, self.window_height = 640, 640
-        self.window_x, self.window_y = int(self.screen_width/2 - self.window_width/2), int(self.screen_height/2 - self.window_height/2)
+        # 1:1 aspect ratio centered, works on single monitor,
+        # bug where width is offset on dual monitor,
+        # have not tested on triple monitor.
+        glutInitWindowSize(WINDOW_DIM, WINDOW_DIM)
+        self.screen_width  = glutGet(GLUT_SCREEN_WIDTH)
+        self.screen_height = glutGet(GLUT_SCREEN_HEIGHT)
+        self.window_x = int(self.screen_width/2 - WINDOW_DIM/2)
+        self.window_y = int(self.screen_height/2 - WINDOW_DIM/2)
         glutInitWindowPosition(self.window_x, self.window_y)
-        self.window = glutCreateWindow('PyOpenGL Test')
+        self.window = glutCreateWindow(WINDOW_TITLE)
         self.setup_viewport()
         # GL version logging
         if GL_INFO_LOG:
@@ -57,7 +67,7 @@ class OpenGLEnv:
         # perspective and camera setup
         glMatrixMode(GL_PROJECTION)
         glLoadIdentity()
-        glOrtho(0.0, self.window_width, 0.0, self.window_height, 0.0, 1.0)
+        glOrtho(0.0, WINDOW_DIM, 0.0, WINDOW_DIM, 0.0, 1.0)
         glMatrixMode(GL_MODELVIEW)
         glClearColor(0.75, 0.75, 0.75, 0.0) # light gray
 
@@ -71,16 +81,14 @@ class OpenGLEnv:
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
         glLoadIdentity()
         glColor(1,0,0,0)
+        self.draw_circle(320, 320, 250, 100)
         glutSwapBuffers()
 
     def draw_circle(self, x, y, radius, lines):
-        glLoadIdentity()
-        glColor(1,0,0,0)
         glBegin(GL_LINE_LOOP)
         for i in range(lines):
             glVertex2f(x + (radius * math.cos(i * (2*math.pi) / lines)), y + (radius * math.sin(i * (2*math.pi) / lines)))
         glEnd()
-        glutSwapBuffers()
 
     def keyboard(self, *args):
         # key events
@@ -104,7 +112,6 @@ class OpenGLEnv:
             for ext in exts.split():
                 print('\t', ext.decode())
 
-# main
+# main routine
 if __name__ == "__main__":
     env = OpenGLEnv()
-    env.draw_circle(320, 320, 250, 100)
