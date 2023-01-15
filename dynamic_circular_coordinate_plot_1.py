@@ -71,9 +71,14 @@ class OpenGLEnv:
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
         glLoadIdentity()
         glColor(1,0,0,0)
+        glutSwapBuffers()
+
+    def draw_circle(self, x, y, radius, lines):
+        glLoadIdentity()
+        glColor(1,0,0,0)
         glBegin(GL_LINE_LOOP)
-        for i in range(100):
-              glVertex2f(320 + (250 * math.cos(i * (2*math.pi) / 100)), 320 + (250 * math.sin(i * (2*math.pi) / 100)))
+        for i in range(lines):
+            glVertex2f(x + (radius * math.cos(i * (2*math.pi) / lines)), y + (radius * math.sin(i * (2*math.pi) / lines)))
         glEnd()
         glutSwapBuffers()
 
@@ -102,3 +107,4 @@ class OpenGLEnv:
 # main
 if __name__ == "__main__":
     env = OpenGLEnv()
+    env.draw_circle(320, 320, 250, 100)
