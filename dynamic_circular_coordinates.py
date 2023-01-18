@@ -212,9 +212,17 @@ class OpenGLEnv:
         # perspective and camera setup
         glMatrixMode(GL_PROJECTION)
         glLoadIdentity()
-        glOrtho(0.0, WINDOW_DIM, 0.0, WINDOW_DIM, 0.0, 1.0)
+        glOrtho(0.0, WINDOW_DIM, 0.0, WINDOW_DIM, -1.0, 1.0)
         glMatrixMode(GL_MODELVIEW)
         glClearColor(0.75, 0.75, 0.75, 0.0) # light gray
+        glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT )
+        glLoadIdentity()
+        glEnable( GL_DEPTH_TEST )
+        proj = glm.ortho(0, WINDOW_DIM, WINDOW_DIM, 0, -1, 1)
+        glColor(1,0,0,0)
+        self.a = [0.3, 0.6, 0.5, 0.8] 
+        self.draw_circle(320, 320, 250, 1000)
+        glutSwapBuffers()
 
     def reshape(self, width, height):
         # viewport resize
@@ -222,28 +230,35 @@ class OpenGLEnv:
         self.setup_viewport()
 
     def display(self, *args):
-        # viewport drawing
-        glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT )
-        glLoadIdentity()
-
-        glEnable( GL_DEPTH_TEST )
-        glEnable( GL_BLEND )
-        glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA )
-
-        glUseProgram(self.shaderProgram)
-        proj = glm.ortho(0, WINDOW_DIM, WINDOW_DIM, 0, -1, 1)
-        glUniformMatrix4fv(1, 1, GL_FALSE, glm.value_ptr(proj))
-        glUniform3f(2, 0.0, 0.0, 0.0)
-        self.render_text("Dynamic Circular Coordinates", (5, 30), 1, (1, 0))
-
-        glColor(1,0,0,0)
-        self.draw_circle(320, 320, 250, 1000)
-        glutSwapBuffers()
+        pass
+        # moved drawing to init method to prevent redrawing while developing
+        #glutSwapBuffers()
 
     def draw_circle(self, x, y, radius, lines):
+        glColor(0,0,1,0)
+        glBegin(GL_POINTS)
+        glVertex2f(x, y)
+        glEnd()
+
+        glColor(0,1,0,0)
+        glBegin(GL_LINES)
+        glVertex2f(x + (-radius * math.sin(-1 * (2*math.pi) / lines)), y + (radius * math.cos(-1 * (2*math.pi) / lines)))
+        glVertex2f(x + (-radius * math.sin(0 * (2*math.pi) / lines)), y + (radius * math.cos(0 * (2*math.pi) / lines)))
+        glVertex2f(x + (radius * math.sin(1 * (2*math.pi) / lines)), y + (radius * math.cos(1 * (2*math.pi) / lines)))
+        glEnd()
+        glColor(1,0,0,0)
+
+        c = 0
         glBegin(GL_LINE_LOOP)
-        for i in range(lines):
-            glVertex2f(x + (radius * math.cos(i * (2*math.pi) / lines)), y + (radius * math.sin(i * (2*math.pi) / lines)))
+        for i in range(2, lines):
+            theta = 2 * math.pi * (i / lines)
+            print(theta)
+            if c < 4 and theta > self.a[c]/4-0.025:
+                glColor(0,0,1,0)
+            if c < 4 and theta > self.a[c]/4+0.025:
+                glColor(1,0,0,0)
+                c+=1
+            glVertex2f(x + (-radius * math.sin(-i * (2*math.pi) / lines)), y + (radius * math.cos(-i * (2*math.pi) / lines)))
         glEnd()
 
     def keyboard(self, *args):

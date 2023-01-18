@@ -39,4 +39,5 @@ deactivate
 -[openGL primitive](https://www.khronos.org/opengl/wiki/Primitive)  
 -[Text-Rendering](https://learnopengl.com/In-Practice/Text-Rendering)  
 -[Text-Rendering Demo](https://github.com/Rabbid76/graphics-snippets/blob/master/example/python/text_freetype/freetype_text.md)  
+-[Google Python Style Guide](https://google.github.io/styleguide/pyguide.html)  
 
