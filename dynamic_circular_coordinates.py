@@ -27,13 +27,6 @@ except:
     print('PyOpenGL is not installed.')
     sys.exit(1)
 
-# FreeType library check
-try:
-    from freetype import *
-except:
-    print('freetype-py is not installed.')
-    sys.exit(1)
-
 # PyGLM library check
 try:
     import glm
@@ -48,41 +41,9 @@ except:
     print('numPy is not installed.')
     sys.exit(1)
 
-text_shader_vert = """
-#version 460
-
-layout (location = 0) in vec2 in_pos;
-layout (location = 1) in vec2 in_uv;
-
-out vec2 vUV;
-
-layout (location = 0) uniform mat4 model;
-layout (location = 1) uniform mat4 projection;
-
-void main()
-{
-    vUV = in_uv.xy;
-    gl_Position = projection * model * vec4(in_pos.xy, 0.0, 1.0);
-}
-"""
-
-text_shader_frag = """
-#version 460
-
-in vec2 vUV;
-
-layout (binding=0) uniform sampler2D u_texture;
-layout (location = 2) uniform vec3 textColor;
-
-out vec4 fragColor;
-
-void main()
-{
-    vec2 uv = vUV.xy;
-    float text = texture(u_texture, uv).r;
-    fragColor = vec4(textColor.rgb*text, text);
-}
-"""
+tau = 2 * math.pi
+margin = 0.5
+circle_perim = 4
 
 # opengl environment class
 class OpenGLEnv:
@@ -92,7 +53,7 @@ class OpenGLEnv:
         self.window = None
         print('Press any key to exit program.')
         glutInit(sys.argv)
-        glutInitDisplayMode( GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH )
+        glutInitDisplayMode( GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH )
         # 1:1 aspect ratio centered, works on single monitor,
         # bug where width is offset on dual monitor,
         # have not tested on triple monitor.
@@ -114,64 +75,9 @@ class OpenGLEnv:
         glutKeyboardFunc(self.keyboard)
         glutDisplayFunc(self.display)
         glutIdleFunc(self.display)
-        # Initializ GL and Font
-        self.init_gl()
-        self.fontsize = 32
-        self.dirname = os.path.dirname(os.path.realpath(__file__))
-        self.make_font(self.dirname+'/FreeSans.ttf', self.fontsize)
 
     def init_gl(self):
-        vertexshader = shaders.compileShader(text_shader_vert, GL_VERTEX_SHADER)
-        fragmentshader = shaders.compileShader(text_shader_frag, GL_FRAGMENT_SHADER)
-        self.shaderProgram = shaders.compileProgram(vertexshader, fragmentshader)
-
-        vquad = [
-          # x   y  u  v
-            0, -1, 0, 0,
-            0,  0, 0, 1,
-            1,  0, 1, 1,
-            0, -1, 0, 0,
-            1,  0, 1, 1,
-            1, -1, 1, 0
-        ]
-        vertex_attributes = numpy.array(vquad, dtype=numpy.float32)
-
-        self.vao = glGenVertexArrays(1)
-        self.vbo = glGenBuffers(1)
-        glBindVertexArray(self.vao)
-        glBindBuffer(GL_ARRAY_BUFFER, self.vbo)
-        glBufferData(GL_ARRAY_BUFFER, vertex_attributes, GL_STATIC_DRAW)
-        float_size = vertex_attributes.itemsize
-        glVertexAttribPointer(0, 2, GL_FLOAT, False, 4*float_size, None)
-        glVertexAttribPointer(1, 2, GL_FLOAT, False, 4*float_size, c_void_p(2*float_size))
-        glEnableVertexAttribArray(0)
-        glEnableVertexAttribArray(1)
-        glBindBuffer(GL_ARRAY_BUFFER, self.vbo)
-        glBindVertexArray(0)
-
-    def make_font(self, filename, fontsize):
-        face = Face(filename)
-        face.set_pixel_sizes(0, fontsize)
-        glPixelStorei(GL_UNPACK_ALIGNMENT, 1)
-        glActiveTexture(GL_TEXTURE0)
-
-        for c in range(128):
-            face.load_char(chr(c), FT_LOAD_RENDER)
-            glyph = face.glyph
-            bitmap = glyph.bitmap
-            size = bitmap.width, bitmap.rows
-            bearing = glyph.bitmap_left, glyph.bitmap_top
-            advance = glyph.advance.x
-
-            texObj = glGenTextures(1)
-            glBindTexture(GL_TEXTURE_2D, texObj)
-            glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
-            glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_R8, *size, 0, GL_RED, GL_UNSIGNED_BYTE, bitmap.buffer)
-            self.characters.append((texObj, size, bearing, advance))
-
-        glPixelStorei(GL_UNPACK_ALIGNMENT, 4)
-        glBindTexture(GL_TEXTURE_2D, 0)
+        pass
 
     def run(self):
         # event loop
@@ -182,32 +88,7 @@ class OpenGLEnv:
         if self.window:
             print('Exiting program now.')
             glutDestroyWindow(self.window)
-
-    def render_text(self, text, pos, scale, dir):
-        glActiveTexture(GL_TEXTURE0)
-        glBindVertexArray(self.vao)
-        angle_rad = math.atan2(dir[1], dir[0])
-        rotateM = glm.rotate(glm.mat4(1), angle_rad, glm.vec3(0, 0, 1))
-        transOriginM = glm.translate(glm.mat4(1), glm.vec3(*pos, 0))
-
-        char_x = 0
-        for c in text:
-            c = ord(c)
-            ch = self.characters[c]
-            w, h = ch[1][0] * scale, ch[1][1] * scale
-            xrel, yrel = char_x + ch[2][0] * scale, (ch[1][1] - ch[2][1]) * scale
-            char_x += (ch[3] >> 6) * scale
-            scaleM = glm.scale(glm.mat4(1), glm.vec3(w, h, 1))
-            transRelM = glm.translate(glm.mat4(1), glm.vec3(xrel, yrel, 0))
-            modelM = transOriginM * rotateM * transRelM * scaleM
-
-            glUniformMatrix4fv(0, 1, GL_FALSE, glm.value_ptr(modelM))
-            glBindTexture(GL_TEXTURE_2D, ch[0])
-            glDrawArrays(GL_TRIANGLES, 0, 6)
-
-        glBindVertexArray(0)
-        glBindTexture(GL_TEXTURE_2D, 0)
-
+    
     def setup_viewport(self):
         # perspective and camera setup
         glMatrixMode(GL_PROJECTION)
@@ -235,30 +116,44 @@ class OpenGLEnv:
         #glutSwapBuffers()
 
     def draw_circle(self, x, y, radius, lines):
+        # BLUE
         glColor(0,0,1,0)
         glBegin(GL_POINTS)
         glVertex2f(x, y)
         glEnd()
 
-        glColor(0,1,0,0)
-        glBegin(GL_LINES)
-        glVertex2f(x + (-radius * math.sin(-1 * (2*math.pi) / lines)), y + (radius * math.cos(-1 * (2*math.pi) / lines)))
-        glVertex2f(x + (-radius * math.sin(0 * (2*math.pi) / lines)), y + (radius * math.cos(0 * (2*math.pi) / lines)))
-        glVertex2f(x + (radius * math.sin(1 * (2*math.pi) / lines)), y + (radius * math.cos(1 * (2*math.pi) / lines)))
-        glEnd()
+        # RED
         glColor(1,0,0,0)
-
-        c = 0
+    
+        # data point counter
+        pnt = 0
+        total = self.a[pnt]
+        print (total)
+        
+        # circle draw
         glBegin(GL_LINE_LOOP)
-        for i in range(2, lines):
-            theta = 2 * math.pi * (i / lines)
-            print(theta)
-            if c < 4 and theta > self.a[c]/4-0.025:
+        for i in range(0, lines):
+          
+            ratio = 360 / lines
+
+            theta = i * ratio
+            #print(theta)
+
+            if theta > 360 / (circle_perim / total) - margin:
+                # BLUE
                 glColor(0,0,1,0)
-            if c < 4 and theta > self.a[c]/4+0.025:
+            
+            if theta > 360 / (circle_perim / total) + margin:
+                # RED
                 glColor(1,0,0,0)
-                c+=1
-            glVertex2f(x + (-radius * math.sin(-i * (2*math.pi) / lines)), y + (radius * math.cos(-i * (2*math.pi) / lines)))
+                if pnt < len(self.a)-1:
+                    pnt+=1
+                    total += self.a[pnt]
+                    print (total)
+
+            # circle vertex
+            glVertex2f(x + (-radius * math.sin(-i * (tau) / lines)), y + (radius * math.cos(-i * (tau) / lines)))
+        
         glEnd()
 
     def keyboard(self, *args):
