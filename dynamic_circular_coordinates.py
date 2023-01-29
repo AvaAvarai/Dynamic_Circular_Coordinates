@@ -116,6 +116,11 @@ class OpenGLEnv:
         #glutSwapBuffers()
 
     def draw_circle(self, x, y, radius, lines):
+
+        glRasterPos3f(WINDOW_DIM/2 - 150, WINDOW_DIM - 25, 0)
+        for char in "Dynamic Circular Coordinates":
+            glutBitmapCharacter( GLUT_BITMAP_TIMES_ROMAN_24, ord(char) )
+
         # BLUE
         glColor(0,0,1,0)
         glBegin(GL_POINTS)
@@ -128,16 +133,14 @@ class OpenGLEnv:
         # data point counter
         pnt = 0
         total = self.a[pnt]
-        print (total)
-        
+        ratio = 360 / lines
+
+
         # circle draw
         glBegin(GL_LINE_LOOP)
-        for i in range(0, lines):
-          
-            ratio = 360 / lines
-
-            theta = i * ratio
-            #print(theta)
+        for n in range(0, lines):
+            
+            theta = n * ratio
 
             if theta > 360 / (circle_perim / total) - margin:
                 # BLUE
@@ -149,10 +152,9 @@ class OpenGLEnv:
                 if pnt < len(self.a)-1:
                     pnt+=1
                     total += self.a[pnt]
-                    print (total)
 
             # circle vertex
-            glVertex2f(x + (-radius * math.sin(-i * (tau) / lines)), y + (radius * math.cos(-i * (tau) / lines)))
+            glVertex2f(x + (-radius * math.sin(-n * (tau) / lines)), y + (radius * math.cos(-n * (tau) / lines)))
         
         glEnd()
 
