@@ -154,6 +154,7 @@ class OpenGLEnv:
             
             theta = n * ratio
 
+            # store quadrant coordinates
             if theta == 0 or theta == 90 or theta == 180 or theta == 270:
                 quads[quad] = (x + (-radius * math.sin(-n * TAU / lines)), y + (radius * math.cos(-n * TAU / lines)))
                 quad += 1
@@ -170,6 +171,7 @@ class OpenGLEnv:
                     total += self.a[pnt]
                     totals[pnt] = total
 
+            # store data point coordinates
             if theta == (360 / (CIRCLE_PERIM / total)):
                 pts[pnt] = (x + (-radius * math.sin(-n * TAU / lines)), y + (radius * math.cos(-n * TAU / lines)))
 

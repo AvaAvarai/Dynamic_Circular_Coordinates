@@ -1,6 +1,6 @@
 # Dynamic Circular Coordinates
 
-[WIP] OpenGL data visualization of 4-D points encoded in dynamic circular coordinates.  
+OpenGL data visualization of 4-D points encoded in dynamic circular coordinates.  
 Coordinate system consisting of a circle with a circumrference of 4 units.  
 
 Example 4-D point a = (0.3, 0.6, 0.5, 0.8)  
