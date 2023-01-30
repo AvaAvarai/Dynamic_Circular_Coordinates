@@ -1,28 +1,34 @@
+# Written by: Alice Williams
+
 import OpenGL
 
-# Error checking flag False gets roughly halved OpenGL calls
-OpenGL.ERROR_CHECKING = True
-# Error logging flag False gives performance boost for non-development
-OpenGL.ERROR_LOGGING = True
-# Full Logging flag enables OpenGL logging module for error trace
-OpenGL.FULL_LOGGING = False
-# GL vendor, version, and extension logging
-GL_INFO_LOG = False
+# Flag Options
+OpenGL.ERROR_CHECKING = True  # False gets roughly halved OpenGL calls
+OpenGL.ERROR_LOGGINGi = True  # False gets performance boost for non-development
+OpenGL.FULL_LOGGING   = False # Enables OpenGL logging module for error trace
+GL_INFO_LOG           = False # GL vendor, version, and extension logging
 
 # Window constants
 WINDOW_TITLE = 'Dynamic Circular Coordinates'
 WINDOW_DIM   = 640
 
+# libraries
 import os   # used for os.path.dirname, os.path.realpath
 import sys  # used for sys.exit
 import math # used for math.pi, math.sin, math.cos
+
+# Calc constants
+TAU          = 2 * math.pi
+CIRCLE_PERIM = 4
+PNT_MARGIN   = 0.5
+PNT_LABELS   = ["A_0", "A_1", "A_2", "A_3"]
+NUM_LABELS   = ["4|0", "1", "2", "3"]
 
 # PyOpenGL library check
 try:
     from OpenGL.GL   import *
     from OpenGL.GLUT import *
     from OpenGL.GLU  import *
-    from OpenGL.GL   import shaders
 except:
     print('PyOpenGL is not installed.')
     sys.exit(1)
@@ -41,19 +47,19 @@ except:
     print('numPy is not installed.')
     sys.exit(1)
 
-tau = 2 * math.pi
-margin = 0.5
-circle_perim = 4
-
 # opengl environment class
 class OpenGLEnv:
     def __init__(self):
-        # setup
-        self.characters = []
         self.window = None
+
+        # stdout message
         print('Press any key to exit program.')
+        
+        # pass cli args
         glutInit(sys.argv)
+        # What is the difference between GLUT_RGB or GLUT_RGBA does that toggle the whole alpha availability?
         glutInitDisplayMode( GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH )
+        
         # 1:1 aspect ratio centered, works on single monitor,
         # bug where width is offset on dual monitor,
         # have not tested on triple monitor.
@@ -65,9 +71,11 @@ class OpenGLEnv:
         glutInitWindowPosition(self.window_x, self.window_y)
         self.window = glutCreateWindow(WINDOW_TITLE)
         self.setup_viewport()
+        
         # GL version logging
         if GL_INFO_LOG:
             self.gl_info()
+        
         # callback functions
         glutReshapeFunc(self.reshape)
         glutIdleFunc(self.display)
@@ -93,15 +101,19 @@ class OpenGLEnv:
         # perspective and camera setup
         glMatrixMode(GL_PROJECTION)
         glLoadIdentity()
+        
         glOrtho(0.0, WINDOW_DIM, 0.0, WINDOW_DIM, -1.0, 1.0)
         glMatrixMode(GL_MODELVIEW)
+        
         glClearColor(0.75, 0.75, 0.75, 0.0) # light gray
         glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT )
+        
         glLoadIdentity()
         glEnable( GL_DEPTH_TEST )
         proj = glm.ortho(0, WINDOW_DIM, WINDOW_DIM, 0, -1, 1)
-        glColor(1,0,0,0)
+        
         self.a = [0.3, 0.6, 0.5, 0.8] 
+        
         self.draw_circle(320, 320, 250, 1000)
         glutSwapBuffers()
 
@@ -113,10 +125,10 @@ class OpenGLEnv:
     def display(self, *args):
         pass
         # moved drawing to init method to prevent redrawing while developing
-        #glutSwapBuffers()
 
     def draw_circle(self, x, y, radius, lines):
 
+        glColor(0,0,0,0)
         glRasterPos3f(WINDOW_DIM/2 - 150, WINDOW_DIM - 25, 0)
         for char in "Dynamic Circular Coordinates":
             glutBitmapCharacter( GLUT_BITMAP_TIMES_ROMAN_24, ord(char) )
@@ -126,15 +138,15 @@ class OpenGLEnv:
         glBegin(GL_POINTS)
         glVertex2f(x, y)
         glEnd()
-
-        # RED
-        glColor(1,0,0,0)
     
         # data point counter
         pnt = 0
         total = self.a[pnt]
+        totals = [total,0,0,0]
         ratio = 360 / lines
-
+        quads = [(0,0), (0,0), (0,0), (0,0)]
+        pts = [(0,0), (0,0), (0,0), (0,0)]
+        quad = 0
 
         # circle draw
         glBegin(GL_LINE_LOOP)
@@ -142,21 +154,54 @@ class OpenGLEnv:
             
             theta = n * ratio
 
-            if theta > 360 / (circle_perim / total) - margin:
-                # BLUE
-                glColor(0,0,1,0)
-            
-            if theta > 360 / (circle_perim / total) + margin:
-                # RED
+            if theta == 0 or theta == 90 or theta == 180 or theta == 270:
+                quads[quad] = (x + (-radius * math.sin(-n * TAU / lines)), y + (radius * math.cos(-n * TAU / lines)))
+                quad += 1
+
+            # begin point
+            if theta > 360 / (CIRCLE_PERIM / total) - PNT_MARGIN:
                 glColor(1,0,0,0)
+
+            # end point
+            if theta > 360 / (CIRCLE_PERIM / total) + PNT_MARGIN:
+                glColor(0,0,1,0)
                 if pnt < len(self.a)-1:
-                    pnt+=1
+                    pnt += 1
                     total += self.a[pnt]
+                    totals[pnt] = total
+
+            if theta == (360 / (CIRCLE_PERIM / total)):
+                pts[pnt] = (x + (-radius * math.sin(-n * TAU / lines)), y + (radius * math.cos(-n * TAU / lines)))
 
             # circle vertex
-            glVertex2f(x + (-radius * math.sin(-n * (tau) / lines)), y + (radius * math.cos(-n * (tau) / lines)))
+            glVertex2f(x + (-radius * math.sin(-n * TAU / lines)), y + (radius * math.cos(-n * TAU / lines)))
         
         glEnd()
+
+        # chord draw
+        glColor(0,0,1,0)
+        glBegin(GL_LINE_LOOP)
+        for p in pts:
+            glVertex2f(p[0], p[1])
+        glEnd()
+
+        # quadrant labels
+        glColor(0,0,0,0)
+        c = 0
+        for q in quads:
+            glRasterPos3f(quads[c][0], quads[c][1], 0)
+            for char in NUM_LABELS[c]:
+                glutBitmapCharacter( GLUT_BITMAP_TIMES_ROMAN_24, ord(char) )
+            c += 1
+
+        # label draw
+        glColor(1,0,0,0)
+        c = 0
+        for p in pts:
+            glRasterPos3f(pts[c][0] - 75, pts[c][1], 0)
+            for char in PNT_LABELS[c] + " " + str(self.a[c]) + "(" + str(round(totals[c], 2)) + ")":
+                glutBitmapCharacter( GLUT_BITMAP_TIMES_ROMAN_24, ord(char) )
+            c += 1
 
     def keyboard(self, *args):
         # key events
