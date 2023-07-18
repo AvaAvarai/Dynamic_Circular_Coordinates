@@ -5,31 +5,15 @@ Coordinate system consisting of a circle with a circumrference of 4 units.
 
 Example 4-D point a = (0.3, 0.6, 0.5, 0.8)  
 
+Demo of above point:    
+![demo image showing 4D point embedded in circle axis with chord connections](demo.png)
+
 # Packages
 
 Required packages: numPy, PyOpenGL and PyOpenGL_accelerate, PyGLM, freetype-py  
 Optional packages: wheel for build improvements  
 
-## virtualenv setup
-
-Using python3 virtualenv, for per project pip package installs preserving system default Python.  
-
-First time setup:  
-
-mkdir <dir_name>  
-cd    <dir_name>  
-python3 -m venv ./  
-source bin/activate  
-pip install <optional_packages> # space delimited  
-pip install <required_packages> # space delimited  
-... # do stuff  
-deactivate  
-
-Returning setup:  
-
-source bin/activate  
-... # do stuff  
-deactivate  
+__Windows note__: PyOpengl pip package should be from [here](https://www.lfd.uci.edu/~gohlke/pythonlibs/#pyopengl) as the pip package does not include binaries by default
 
 ## references
 
